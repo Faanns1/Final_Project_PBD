@@ -14,14 +14,14 @@ Proyek ini mencakup tahapan mulai dari perancangan **ERD (Entity Relationship Di
 
 ## 🧑‍🤝‍🧑 Anggota Kelompok
 
-| No | Nama Lengkap                                       | NIM          | Peran               |
-|----|----------------------------------------------------|--------------|----------------------|
-| 1  | Rifky Danu Asmoro                                 | 23.11.5489   | Database Design      |
-| 2  | Vianda Retnaningtiyas Purbandari Karetji          | 23.11.5445   | Backend Developer    |
-| 3  | Stefanus Arya Bayu Samudra Bataona                | 23.11.5477   | Frontend Developer   |
-| 4  | Farhan Ardiansyah                                 | 23.11.5464   | Dokumentasi          |
-| 5  | I Made Baskara Saccid Ananda                      | 23.11.5466   | Tester & Debugging   |
-| 6  | Debi Saputra                                       | 23.11.5480   | ERD & SQL Generator  |
+| No | Nama Lengkap                                       | NIM          |
+|----|----------------------------------------------------|--------------|
+| 1  | Rifky Danu Asmoro                                 | 23.11.5489   |
+| 2  | Vianda Retnaningtiyas Purbandari Karetji          | 23.11.5445   |
+| 3  | Stefanus Arya Bayu Samudra Bataona                | 23.11.5477   |
+| 4  | Farhan Ardiansyah                                 | 23.11.5464   |
+| 5  | I Made Baskara Saccid Ananda                      | 23.11.5466   |
+| 6  | Debi Saputra                                       | 23.11.5480   |
 
 ---
 
