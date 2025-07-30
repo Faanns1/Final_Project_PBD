@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 28, 2025 at 08:21 AM
+-- Generation Time: Jul 30, 2025 at 06:43 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -26,37 +26,95 @@ DELIMITER $$
 -- Procedures
 --
 CREATE DEFINER=`root`@`localhost` PROCEDURE `tampilkan_produk_kategori_harga` (IN `p_id_kategori` INT, IN `p_min_harga` BIGINT)   BEGIN
-    SELECT 
-        b.id,
-        b.title AS nama_produk,
-        b.price AS harga,
-        c.name AS nama_kategori
-    FROM best_seller b
-    JOIN category c ON b.id_category = c.id_category
-    WHERE b.id_category = p_id_kategori
-      AND b.price >= p_min_harga
-    ORDER BY b.price DESC;
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_id INT;
+    DECLARE v_nama_produk VARCHAR(100);
+    DECLARE v_harga BIGINT;
+    DECLARE v_nama_kategori VARCHAR(100);
+
+    DECLARE cur_produk CURSOR FOR
+        SELECT 
+            b.id,
+            b.title,
+            b.price,
+            c.name
+        FROM best_seller b
+        JOIN category c ON b.id_category = c.id_category
+        WHERE b.id_category = p_id_kategori
+          AND b.price >= p_min_harga
+        ORDER BY b.price DESC;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    CREATE TEMPORARY TABLE IF NOT EXISTS temp_produk (
+        id INT,
+        nama_produk VARCHAR(100),
+        harga BIGINT,
+        nama_kategori VARCHAR(100)
+    );
+
+    TRUNCATE TABLE temp_produk;
+
+    OPEN cur_produk;
+
+    read_loop: LOOP
+        FETCH cur_produk INTO v_id, v_nama_produk, v_harga, v_nama_kategori;
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        INSERT INTO temp_produk VALUES (v_id, v_nama_produk, v_harga, v_nama_kategori);
+    END LOOP;
+
+    CLOSE cur_produk;
+
+    SELECT * FROM temp_produk;
 END$$
 
 CREATE DEFINER=`root`@`localhost` PROCEDURE `tampilkan_produk_tersedia` ()   BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_id INT;
+    DECLARE v_nama VARCHAR(100);
+    DECLARE v_harga BIGINT;
+    DECLARE v_status VARCHAR(50);
     DECLARE jumlah INT;
 
-    -- Hitung jumlah produk yang tersedia
-    SELECT COUNT(*) INTO jumlah FROM best_seller WHERE status = 'In Stock';
-
-    -- Flow control: cek apakah ada produk
-    IF jumlah = 0 THEN
-        SELECT 'Tidak ada produk yang tersedia.' AS pesan;
-    ELSE
-        -- Tampilkan produk tersedia
-        SELECT 
-            id AS ID,
-            title AS Nama,
-            price AS Harga,
-            status AS Status
+    DECLARE cur_produk CURSOR FOR
+        SELECT id, title, price, status 
         FROM best_seller
         WHERE status = 'In Stock'
         ORDER BY price DESC;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    SELECT COUNT(*) INTO jumlah FROM best_seller WHERE status = 'In Stock';
+
+    IF jumlah = 0 THEN
+        SELECT 'Tidak ada produk yang tersedia.' AS pesan;
+    ELSE
+        CREATE TEMPORARY TABLE IF NOT EXISTS temp_produk_tersedia (
+            ID INT,
+            Nama VARCHAR(100),
+            Harga BIGINT,
+            Status VARCHAR(50)
+        );
+
+        TRUNCATE TABLE temp_produk_tersedia;
+
+        OPEN cur_produk;
+
+        read_loop: LOOP
+            FETCH cur_produk INTO v_id, v_nama, v_harga, v_status;
+            IF done THEN
+                LEAVE read_loop;
+            END IF;
+
+            INSERT INTO temp_produk_tersedia VALUES (v_id, v_nama, v_harga, v_status);
+        END LOOP;
+
+        CLOSE cur_produk;
+
+        SELECT * FROM temp_produk_tersedia;
     END IF;
 END$$
 
@@ -67,7 +125,7 @@ CREATE DEFINER=`root`@`localhost` FUNCTION `get_welcome_message` () RETURNS VARC
     RETURN 'Selamat datang di Technologia!';
 END$$
 
-CREATE DEFINER=`root`@`localhost` FUNCTION `total_harga` (`harga` INT, `jumlah` INT) RETURNS INT(11) DETERMINISTIC BEGIN
+CREATE DEFINER=`root`@`localhost` FUNCTION `total_harga` (`harga` INT, `jumlah` INT) RETURNS INT(11)  BEGIN
     RETURN harga * jumlah;
 END$$
 
@@ -1510,31 +1568,6 @@ INSERT INTO `users` (`id`, `username`, `nama`, `password`, `no_telefon`, `email`
 -- --------------------------------------------------------
 
 --
--- Stand-in structure for view `vw_all_laptop`
--- (See below for the actual view)
---
-CREATE TABLE `vw_all_laptop` (
-`id` int(11)
-,`slug` varchar(100)
-,`title` varchar(255)
-,`specs` text
-,`price` bigint(20)
-,`old_price` bigint(20)
-,`status` varchar(50)
-,`image_1` varchar(255)
-,`image_2` varchar(255)
-,`image_3` varchar(255)
-,`category` text
-,`buy_link` text
-,`description` text
-,`qr_code` varchar(255)
-,`created_at` datetime
-,`id_category` int(11)
-);
-
--- --------------------------------------------------------
-
---
 -- Stand-in structure for view `vw_best_seller_mahal`
 -- (See below for the actual view)
 --
@@ -1564,22 +1597,6 @@ CREATE TABLE `vw_best_seller_mahal` (
 -- (See below for the actual view)
 --
 CREATE TABLE `vw_laptop_midrange` (
-`id` int(11)
-,`slug` varchar(100)
-,`title` varchar(255)
-,`specs` text
-,`price` bigint(20)
-,`old_price` bigint(20)
-,`status` varchar(50)
-,`image_1` varchar(255)
-,`image_2` varchar(255)
-,`image_3` varchar(255)
-,`category` text
-,`buy_link` text
-,`description` text
-,`qr_code` varchar(255)
-,`created_at` datetime
-,`id_category` int(11)
 );
 
 -- --------------------------------------------------------
@@ -1592,15 +1609,6 @@ CREATE TABLE `vw_on_sale_simple` (
 `title` varchar(255)
 ,`price` decimal(10,2)
 );
-
--- --------------------------------------------------------
-
---
--- Structure for view `vw_all_laptop`
---
-DROP TABLE IF EXISTS `vw_all_laptop`;
-
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vw_all_laptop`  AS SELECT `best_seller`.`id` AS `id`, `best_seller`.`slug` AS `slug`, `best_seller`.`title` AS `title`, `best_seller`.`specs` AS `specs`, `best_seller`.`price` AS `price`, `best_seller`.`old_price` AS `old_price`, `best_seller`.`status` AS `status`, `best_seller`.`image_1` AS `image_1`, `best_seller`.`image_2` AS `image_2`, `best_seller`.`image_3` AS `image_3`, `best_seller`.`category` AS `category`, `best_seller`.`buy_link` AS `buy_link`, `best_seller`.`description` AS `description`, `best_seller`.`qr_code` AS `qr_code`, `best_seller`.`created_at` AS `created_at`, `best_seller`.`id_category` AS `id_category` FROM `best_seller` WHERE `best_seller`.`price` between 3000000 and 10000000 ;
 
 -- --------------------------------------------------------
 
